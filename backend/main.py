@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from Backend.api.video import router as video_router
 from Backend.api.detection import router as detection_router
+from Backend.api.detection import ai_router
 
 
 app = FastAPI(
@@ -11,6 +12,7 @@ app = FastAPI(
 )
 app.include_router(video_router)
 app.include_router(detection_router)
+app.include_router(ai_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

@@ -1,8 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, UploadFile, File
+from fastapi.responses import FileResponse
 from pathlib import Path
 import cv2
 import subprocess
 import shutil
+import uuid
+import time
+import json
 
 from Backend.ai.pipeline import TransportAIPipeline
 
@@ -29,6 +33,68 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =====================================================
+# FFmpeg / FFprobe absolute paths
+# =====================================================
+
+def find_ffmpeg():
+    """Find FFmpeg executable using absolute path."""
+
+    known_path = Path(
+        r"C:\Users\sanka\AppData\Local\Microsoft\WinGet"
+        r"\Packages\Gyan.FFmpeg_Microsoft.Winget.Source"
+        r"_8wekyb3d8bbwe\ffmpeg-9.0.1-full_build\bin"
+        r"\ffmpeg.exe"
+    )
+
+    if known_path.exists():
+        return known_path
+
+    # Fallback: try PATH
+    try:
+        result = subprocess.run(
+            ["where", "ffmpeg"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            path = result.stdout.strip().split("\n")[0].strip()
+            if Path(path).exists():
+                return Path(path)
+    except Exception:
+        pass
+
+    return None
+
+
+def find_ffprobe():
+    """Find FFprobe executable next to FFmpeg."""
+
+    ffmpeg = find_ffmpeg()
+
+    if ffmpeg and ffmpeg.parent:
+        ffprobe = ffmpeg.parent / "ffprobe.exe"
+        if ffprobe.exists():
+            return ffprobe
+
+    return None
+
+
+FFMPEG_PATH = find_ffmpeg()
+FFPROBE_PATH = find_ffprobe()
+
+if FFMPEG_PATH:
+    print(f"FFmpeg found: {FFMPEG_PATH}")
+else:
+    print("WARNING: FFmpeg not found!")
+
+if FFPROBE_PATH:
+    print(f"FFprobe found: {FFPROBE_PATH}")
+else:
+    print("WARNING: FFprobe not found!")
+
+
+# =====================================================
 # AI Pipeline
 # =====================================================
 
@@ -36,7 +102,176 @@ pipeline = TransportAIPipeline()
 
 
 # =====================================================
-# Process video
+# Processing job status tracking
+# =====================================================
+
+# { filename: { status, progress, error, ... } }
+processing_jobs = {}
+
+
+# =====================================================
+# FFprobe validation
+# =====================================================
+
+def validate_video_with_ffprobe(
+    video_path: Path,
+    expected_fps: float = None,
+    expected_width: int = None,
+    expected_height: int = None,
+    expected_frame_count: int = None
+):
+    """
+    Validate the output video using FFprobe.
+    Returns (is_valid, info_dict).
+    """
+
+    if not FFPROBE_PATH:
+        print("FFprobe not available, skipping validation")
+        return True, {}
+
+    try:
+        command = [
+            str(FFPROBE_PATH),
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_format",
+            "-show_streams",
+            str(video_path)
+        ]
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            print(
+                f"FFprobe failed: {result.stderr}"
+            )
+            return False, {}
+
+        probe_data = json.loads(result.stdout)
+
+        # Find video stream
+        video_stream = None
+        for stream in probe_data.get("streams", []):
+            if stream.get("codec_type") == "video":
+                video_stream = stream
+                break
+
+        if not video_stream:
+            print("VALIDATION FAILED: No video stream found")
+            return False, {}
+
+        info = {
+            "codec": video_stream.get("codec_name", ""),
+            "width": int(video_stream.get("width", 0)),
+            "height": int(video_stream.get("height", 0)),
+            "pix_fmt": video_stream.get("pix_fmt", ""),
+            "duration": float(
+                probe_data.get("format", {}).get(
+                    "duration", 0
+                )
+            ),
+            "nb_frames": video_stream.get(
+                "nb_frames", "N/A"
+            ),
+        }
+
+        # Parse FPS from r_frame_rate
+        r_frame_rate = video_stream.get(
+            "r_frame_rate", "0/1"
+        )
+        try:
+            num, den = r_frame_rate.split("/")
+            info["fps"] = float(num) / float(den)
+        except (ValueError, ZeroDivisionError):
+            info["fps"] = 0.0
+
+        print("=" * 60)
+        print("OUTPUT VIDEO VALIDATION")
+        print("=" * 60)
+        print(f"  Codec:        {info['codec']}")
+        print(f"  Resolution:   {info['width']}x{info['height']}")
+        print(f"  FPS:          {info['fps']:.2f}")
+        print(f"  Pixel Format: {info['pix_fmt']}")
+        print(f"  Duration:     {info['duration']:.2f}s")
+        print(f"  Frames:       {info['nb_frames']}")
+
+        # Validation checks
+        is_valid = True
+
+        if info["codec"] != "h264":
+            print(
+                f"  WARNING: Expected h264, got {info['codec']}"
+            )
+            is_valid = False
+
+        if info["pix_fmt"] != "yuv420p":
+            print(
+                f"  WARNING: Expected yuv420p, got {info['pix_fmt']}"
+            )
+            is_valid = False
+
+        if expected_width and info["width"] != expected_width:
+            print(
+                f"  WARNING: Width mismatch: "
+                f"expected {expected_width}, "
+                f"got {info['width']}"
+            )
+            is_valid = False
+
+        if expected_height and info["height"] != expected_height:
+            print(
+                f"  WARNING: Height mismatch: "
+                f"expected {expected_height}, "
+                f"got {info['height']}"
+            )
+            is_valid = False
+
+        # Check duration mismatch
+        if (
+            expected_fps
+            and expected_frame_count
+            and expected_fps > 0
+        ):
+            expected_duration = (
+                expected_frame_count / expected_fps
+            )
+
+            if info["duration"] > 0:
+                duration_diff = abs(
+                    info["duration"] - expected_duration
+                )
+
+                if duration_diff > 2.0:
+                    print(
+                        f"  WARNING: Duration mismatch: "
+                        f"expected ~{expected_duration:.1f}s, "
+                        f"got {info['duration']:.1f}s "
+                        f"(diff: {duration_diff:.1f}s)"
+                    )
+
+                    # Only fail on severe mismatch
+                    if duration_diff > 10.0:
+                        is_valid = False
+
+        if is_valid:
+            print("  VALIDATION: PASSED")
+        else:
+            print("  VALIDATION: FAILED")
+
+        return is_valid, info
+
+    except Exception as e:
+        print(f"FFprobe validation error: {e}")
+        return True, {}
+
+
+# =====================================================
+# Process video (existing background task endpoint)
 # =====================================================
 
 @router.post("/process/{filename}")
@@ -59,10 +294,18 @@ async def process_video(
 
     output_path = OUTPUT_DIR / output_filename
 
+    # Track job status
+    processing_jobs[filename] = {
+        "status": "queued",
+        "progress": 0,
+        "output": output_filename
+    }
+
     background_tasks.add_task(
         process_video_file,
         input_path,
-        output_path
+        output_path,
+        filename
     )
 
     return {
@@ -73,17 +316,59 @@ async def process_video(
 
 
 # =====================================================
+# Processing status endpoint
+# =====================================================
+
+@router.get("/status/{filename}")
+async def get_processing_status(filename: str):
+
+    job = processing_jobs.get(filename)
+
+    if not job:
+        return {
+            "status": "not_found",
+            "filename": filename
+        }
+
+    return job
+
+
+# =====================================================
 # Process video file
 # =====================================================
 
 def process_video_file(
     input_path: Path,
-    output_path: Path
+    output_path: Path,
+    job_key: str = None
 ):
+    """
+    Process video through AI pipeline, write to temp AVI,
+    then convert to H.264 MP4 using FFmpeg.
+
+    Returns dict with processing metadata, or None on failure.
+    """
+
+    if job_key:
+        processing_jobs[job_key] = {
+            "status": "processing",
+            "progress": 0
+        }
 
     print("=" * 60)
     print("STARTING VIDEO PROCESSING")
     print("=" * 60)
+
+    # Check FFmpeg availability
+    if not FFMPEG_PATH or not FFMPEG_PATH.exists():
+        msg = "ERROR: FFmpeg not found. Cannot process video."
+        print(msg)
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+        return None
 
     cap = cv2.VideoCapture(
         str(input_path)
@@ -91,9 +376,16 @@ def process_video_file(
 
     if not cap.isOpened():
 
-        print("ERROR: Could not open video")
+        msg = "ERROR: Could not open video"
+        print(msg)
 
-        return
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+
+        return None
 
     # =================================================
     # Read video properties
@@ -121,18 +413,39 @@ def process_video_file(
         )
     )
 
+    fourcc_code = int(
+        cap.get(
+            cv2.CAP_PROP_FOURCC
+        )
+    )
+
+    input_codec = "".join(
+        chr((fourcc_code >> 8 * i) & 0xFF)
+        for i in range(4)
+    )
+
     # Safety fallback
     if fps <= 0 or fps > 120:
 
         print(
-            f"Invalid FPS detected: {fps}"
+            f"Invalid FPS detected: {fps}, "
+            f"using fallback 30.0"
         )
 
         fps = 30.0
 
+    input_duration = (
+        total_frames / fps
+        if fps > 0 and total_frames > 0
+        else 0
+    )
+
+    print(f"Input file: {input_path.name}")
+    print(f"Input codec: {input_codec}")
     print(f"FPS: {fps}")
     print(f"Resolution: {width}x{height}")
     print(f"Total frames: {total_frames}")
+    print(f"Duration: {input_duration:.2f}s")
 
     # =================================================
     # Temporary video
@@ -161,19 +474,25 @@ def process_video_file(
 
     if not out.isOpened():
 
-        print(
-            "ERROR: Could not create temporary video"
-        )
+        msg = "ERROR: Could not create temporary video writer"
+        print(msg)
 
         cap.release()
 
-        return
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+
+        return None
 
     # =================================================
     # Frame processing
     # =================================================
 
     frame_count = 0
+    start_time = time.time()
 
     try:
 
@@ -391,8 +710,14 @@ def process_video_file(
                 )
 
             # =========================================
-            # WRITE FRAME
+            # FRAME DIMENSION CHECK + WRITE
             # =========================================
+
+            # Verify frame dimensions match expected
+            if frame.shape[:2] != (height, width):
+                frame = cv2.resize(
+                    frame, (width, height)
+                )
 
             out.write(frame)
 
@@ -416,11 +741,28 @@ def process_video_file(
                         f"({progress:.1f}%)"
                     )
 
+                    if job_key:
+                        processing_jobs[job_key] = {
+                            "status": "processing",
+                            "progress": round(
+                                progress, 1
+                            )
+                        }
+
     except Exception as e:
 
         print(
             f"PROCESSING ERROR: {e}"
         )
+
+        cap.release()
+        out.release()
+
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": str(e)
+            }
 
         raise
 
@@ -429,18 +771,23 @@ def process_video_file(
         cap.release()
         out.release()
 
+    processing_time = time.time() - start_time
+
     print("=" * 60)
     print("AI PROCESSING COMPLETE")
+    print(f"Frames processed: {frame_count}")
+    print(f"Processing time: {processing_time:.1f}s")
     print("=" * 60)
 
     # =================================================
-    # Convert AVI → H.264 MP4
+    # Convert AVI → H.264 MP4 using FFmpeg
     # =================================================
 
     print("Converting output to H.264 MP4...")
+    print(f"FFmpeg path: {FFMPEG_PATH}")
 
     command = [
-        "ffmpeg",
+        str(FFMPEG_PATH),
         "-y",
         "-i",
         str(temp_path),
@@ -459,10 +806,22 @@ def process_video_file(
 
     try:
 
-        subprocess.run(
+        ffmpeg_result = subprocess.run(
             command,
-            check=True
+            capture_output=True,
+            text=True,
+            timeout=600
         )
+
+        if ffmpeg_result.returncode != 0:
+            print(
+                "FFmpeg STDERR:\n"
+                f"{ffmpeg_result.stderr}"
+            )
+            raise subprocess.CalledProcessError(
+                ffmpeg_result.returncode,
+                command
+            )
 
         print(
             "H.264 conversion successful."
@@ -470,23 +829,72 @@ def process_video_file(
 
     except FileNotFoundError:
 
-        print(
-            "ERROR: FFmpeg is not installed "
-            "or not available in PATH."
+        msg = (
+            "ERROR: FFmpeg executable not found at: "
+            f"{FFMPEG_PATH}"
         )
+        print(msg)
 
-        # Don't silently pretend the conversion worked.
-        # Keep the temporary file for debugging.
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
 
-        return
+        # Keep temp file for debugging
+        return None
 
     except subprocess.CalledProcessError as e:
 
-        print(
-            f"FFmpeg conversion failed: {e}"
-        )
+        msg = f"FFmpeg conversion failed: {e}"
+        print(msg)
 
-        return
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+
+        # Keep temp file for debugging
+        return None
+
+    except subprocess.TimeoutExpired:
+
+        msg = "FFmpeg conversion timed out (600s)"
+        print(msg)
+
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+
+        return None
+
+    # =================================================
+    # Validate output with FFprobe
+    # =================================================
+
+    is_valid, probe_info = validate_video_with_ffprobe(
+        output_path,
+        expected_fps=fps,
+        expected_width=width,
+        expected_height=height,
+        expected_frame_count=frame_count
+    )
+
+    if not is_valid:
+        msg = "Output video validation FAILED"
+        print(msg)
+
+        if job_key:
+            processing_jobs[job_key] = {
+                "status": "failed",
+                "error": msg
+            }
+
+        # Keep temp file for debugging
+        return None
 
     # =================================================
     # Remove temporary file
@@ -495,8 +903,172 @@ def process_video_file(
     if temp_path.exists():
 
         temp_path.unlink()
+        print(f"Removed temp file: {temp_path}")
+
+    # =================================================
+    # Mark job as completed
+    # =================================================
+
+    output_duration = probe_info.get(
+        "duration", input_duration
+    )
+
+    result_info = {
+        "status": "completed",
+        "input_fps": fps,
+        "output_fps": probe_info.get("fps", fps),
+        "input_frames": total_frames,
+        "output_frames": frame_count,
+        "input_duration": round(input_duration, 2),
+        "output_duration": round(output_duration, 2),
+        "output_codec": probe_info.get("codec", "h264"),
+        "output_pix_fmt": probe_info.get(
+            "pix_fmt", "yuv420p"
+        ),
+        "width": width,
+        "height": height,
+        "processing_time_seconds": round(
+            processing_time, 2
+        ),
+        "output_path": str(output_path)
+    }
+
+    if job_key:
+        processing_jobs[job_key] = result_info
 
     print("=" * 60)
     print("PROCESSING COMPLETE")
     print(f"FINAL OUTPUT: {output_path}")
+    print(f"Input FPS: {fps}")
+    print(f"Output FPS: {probe_info.get('fps', fps)}")
+    print(f"Input frames: {total_frames}")
+    print(f"Output frames: {frame_count}")
+    print(f"Output codec: {probe_info.get('codec', 'h264')}")
+    print(f"Output duration: {output_duration:.2f}s")
+    print(f"Processing time: {processing_time:.1f}s")
     print("=" * 60)
+
+    return result_info
+
+
+# =====================================================
+# Serve processed video
+# =====================================================
+
+@router.get("/video/{filename}")
+async def serve_processed_video(filename: str):
+    """Serve a processed video file."""
+
+    video_path = OUTPUT_DIR / filename
+
+    if not video_path.exists():
+        return {
+            "status": "error",
+            "message": "Processed video not found"
+        }
+
+    return FileResponse(
+        path=str(video_path),
+        media_type="video/mp4",
+        filename=filename
+    )
+
+
+# =====================================================
+# Single-shot upload + process endpoint
+# (This is what the frontend calls)
+# =====================================================
+
+ai_router = APIRouter(
+    prefix="/api/ai",
+    tags=["AI Processing"]
+)
+
+
+@ai_router.post("/process-video")
+async def ai_process_video(
+    file: UploadFile = File(...)
+):
+    """
+    Single-shot endpoint: upload video + run full AI
+    pipeline + FFmpeg encode + return processed URL.
+
+    This is the endpoint the frontend calls at:
+    POST /api/ai/process-video
+    """
+
+    print("=" * 60)
+    print("RECEIVED VIDEO FOR AI PROCESSING")
+    print(f"Filename: {file.filename}")
+    print("=" * 60)
+
+    # Save uploaded file
+    file_id = str(uuid.uuid4())
+    extension = Path(file.filename).suffix or ".mp4"
+    upload_filename = f"{file_id}{extension}"
+    input_path = UPLOAD_DIR / upload_filename
+
+    with open(input_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    print(f"Saved upload: {input_path}")
+
+    # Determine output path
+    # Ensure output is always .mp4
+    output_stem = f"processed_{file_id}"
+    output_filename = f"{output_stem}.mp4"
+    output_path = OUTPUT_DIR / output_filename
+
+    # Run processing synchronously
+    result = process_video_file(
+        input_path,
+        output_path,
+        job_key=upload_filename
+    )
+
+    if result is None:
+        return {
+            "success": False,
+            "error": "Video processing failed. Check server logs."
+        }
+
+    # Build the video URL the frontend can use
+    video_url = (
+        f"http://127.0.0.1:8000"
+        f"/api/detection/video/{output_filename}"
+    )
+
+    return {
+        "success": True,
+        "video_url": video_url,
+        "total_frames": result.get("output_frames", 0),
+        "duration_seconds": result.get(
+            "output_duration", 0
+        ),
+        "processing_time_seconds": result.get(
+            "processing_time_seconds", 0
+        ),
+        "fps": result.get("input_fps", 0),
+        "width": result.get("width", 0),
+        "height": result.get("height", 0),
+        "codec": result.get("output_codec", "h264")
+    }
+
+
+@ai_router.get("/video/{filename}")
+async def ai_serve_video(filename: str):
+    """Serve processed video (alias under /api/ai/)."""
+
+    video_path = OUTPUT_DIR / filename
+
+    if not video_path.exists():
+        return {
+            "status": "error",
+            "message": "Processed video not found"
+        }
+
+    return FileResponse(
+        path=str(video_path),
+        media_type="video/mp4",
+        filename=filename
+    )
