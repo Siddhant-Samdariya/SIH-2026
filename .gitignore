@@ -47,10 +47,7 @@ backend/.venv/
 *.safetensors
 *.bin
 *.weights
-*.model
-Deep learning models/
-backend/models/weights/
-models/weights/
+
 
 # ==========================================
 # Video & Media Files / Processing Outputs
