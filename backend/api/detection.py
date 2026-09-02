@@ -1,6 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks
 from pathlib import Path
 import cv2
+import subprocess
+import shutil
 
 from Backend.ai.pipeline import TransportAIPipeline
 
@@ -11,40 +13,31 @@ router = APIRouter(
 )
 
 
-# --------------------------------------------------
-# Project paths
-# --------------------------------------------------
+# =====================================================
+# Paths
+# =====================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 UPLOAD_DIR = PROJECT_ROOT / "Backend" / "uploads"
-
 OUTPUT_DIR = PROJECT_ROOT / "Backend" / "outputs"
+TEMP_DIR = OUTPUT_DIR / "temp"
 
-OUTPUT_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# --------------------------------------------------
-# Load AI pipeline once
-# --------------------------------------------------
-
-print("=" * 60)
-print("LOADING AI PIPELINE")
-print("=" * 60)
+# =====================================================
+# AI Pipeline
+# =====================================================
 
 pipeline = TransportAIPipeline()
 
-print("=" * 60)
-print("AI PIPELINE READY")
-print("=" * 60)
 
-
-# --------------------------------------------------
-# PROCESS VIDEO API
-# --------------------------------------------------
+# =====================================================
+# Process video
+# =====================================================
 
 @router.post("/process/{filename}")
 async def process_video(
@@ -52,9 +45,9 @@ async def process_video(
     background_tasks: BackgroundTasks
 ):
 
-    video_path = UPLOAD_DIR / filename
+    input_path = UPLOAD_DIR / filename
 
-    if not video_path.exists():
+    if not input_path.exists():
 
         return {
             "status": "error",
@@ -62,31 +55,39 @@ async def process_video(
             "filename": filename
         }
 
-    # Start processing in background
+    output_filename = f"processed_{filename}"
+
+    output_path = OUTPUT_DIR / output_filename
+
     background_tasks.add_task(
         process_video_file,
-        video_path
+        input_path,
+        output_path
     )
 
     return {
         "status": "processing",
-        "filename": filename,
-        "message": "AI processing started"
+        "input": filename,
+        "output": output_filename
     }
 
 
-# --------------------------------------------------
-# VIDEO PROCESSING
-# --------------------------------------------------
+# =====================================================
+# Process video file
+# =====================================================
 
-def process_video_file(video_path: Path):
+def process_video_file(
+    input_path: Path,
+    output_path: Path
+):
 
-    print("\n" + "=" * 60)
-    print("AI VIDEO PROCESSING STARTED")
-    print(f"Input: {video_path}")
+    print("=" * 60)
+    print("STARTING VIDEO PROCESSING")
     print("=" * 60)
 
-    cap = cv2.VideoCapture(str(video_path))
+    cap = cv2.VideoCapture(
+        str(input_path)
+    )
 
     if not cap.isOpened():
 
@@ -94,243 +95,408 @@ def process_video_file(video_path: Path):
 
         return
 
-    # Video information
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    # =================================================
+    # Read video properties
+    # =================================================
+
+    fps = cap.get(
+        cv2.CAP_PROP_FPS
+    )
 
     width = int(
-        cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        cap.get(
+            cv2.CAP_PROP_FRAME_WIDTH
+        )
     )
 
     height = int(
-        cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        cap.get(
+            cv2.CAP_PROP_FRAME_HEIGHT
+        )
     )
 
     total_frames = int(
-        cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        cap.get(
+            cv2.CAP_PROP_FRAME_COUNT
+        )
     )
+
+    # Safety fallback
+    if fps <= 0 or fps > 120:
+
+        print(
+            f"Invalid FPS detected: {fps}"
+        )
+
+        fps = 30.0
 
     print(f"FPS: {fps}")
-    print(f"Resolution: {width} x {height}")
+    print(f"Resolution: {width}x{height}")
     print(f"Total frames: {total_frames}")
 
-    # ------------------------------------------------
-    # Output video
-    # ------------------------------------------------
+    # =================================================
+    # Temporary video
+    # =================================================
 
-    output_path = (
-        OUTPUT_DIR
-        / f"processed_{video_path.name}"
+    temp_path = TEMP_DIR / (
+        f"temp_{input_path.stem}.avi"
     )
 
+    print(
+        f"Temporary output: {temp_path}"
+    )
+
+    # MJPG is much more reliable for frame-by-frame
+    # OpenCV processing than directly writing MP4.
     fourcc = cv2.VideoWriter_fourcc(
-        *"mp4v"
+        *"MJPG"
     )
 
-    writer = cv2.VideoWriter(
-        str(output_path),
+    out = cv2.VideoWriter(
+        str(temp_path),
         fourcc,
         fps,
         (width, height)
     )
 
-    frame_number = 0
+    if not out.isOpened():
 
-    total_vehicles = 0
-    total_potholes = 0
-    total_road_damage = 0
-
-    # ------------------------------------------------
-    # Process frames
-    # ------------------------------------------------
-
-    while True:
-
-        ret, frame = cap.read()
-
-        if not ret:
-            break
-
-        frame_number += 1
-
-        # Run all AI models
-        results = pipeline.process_frame(
-            frame
+        print(
+            "ERROR: Could not create temporary video"
         )
 
-        vehicles = results["vehicles"]
-        potholes = results["potholes"]
-        road_damage = results["road_damage"]
+        cap.release()
 
-        # Update counters
-        total_vehicles += len(vehicles)
-        total_potholes += len(potholes)
-        total_road_damage += len(road_damage)
+        return
 
-        # ------------------------------------------------
-        # Draw vehicle detections
-        # ------------------------------------------------
+    # =================================================
+    # Frame processing
+    # =================================================
 
-        for detection in vehicles:
+    frame_count = 0
 
-            x1, y1, x2, y2 = map(
-                int,
-                detection["bbox"]
-            )
+    try:
 
-            label = (
-                f"Vehicle "
-                f"{detection['confidence']:.2f}"
-            )
+        while True:
 
-            cv2.rectangle(
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            frame_count += 1
+
+            # -----------------------------------------
+            # AI pipeline
+            # -----------------------------------------
+
+            results = pipeline.process_frame(
                 frame,
-                (x1, y1),
-                (x2, y2),
-                (255, 0, 0),
-                2
+                frame_count
             )
 
-            cv2.putText(
-                frame,
-                label,
-                (x1, max(y1 - 10, 20)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (255, 0, 0),
-                2
+            vehicles = results.get(
+                "vehicles",
+                []
             )
 
-        # ------------------------------------------------
-        # Draw potholes
-        # ------------------------------------------------
-
-        for detection in potholes:
-
-            x1, y1, x2, y2 = map(
-                int,
-                detection["bbox"]
+            potholes = results.get(
+                "potholes",
+                []
             )
 
-            label = (
-                f"{detection['class_name']} "
-                f"{detection['confidence']:.2f}"
+            road_damage = results.get(
+                "road_damage",
+                []
             )
 
-            cv2.rectangle(
-                frame,
-                (x1, y1),
-                (x2, y2),
-                (0, 255, 255),
-                2
+            anpr = results.get(
+                "anpr",
+                []
             )
 
-            cv2.putText(
-                frame,
-                label,
-                (x1, max(y1 - 10, 20)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 255),
-                2
-            )
+            # =========================================
+            # VEHICLES
+            # =========================================
 
-        # ------------------------------------------------
-        # Draw road damage
-        # ------------------------------------------------
+            for vehicle in vehicles:
 
-        for detection in road_damage:
+                x1, y1, x2, y2 = map(
+                    int,
+                    vehicle["bbox"]
+                )
 
-            x1, y1, x2, y2 = map(
-                int,
-                detection["bbox"]
-            )
+                vehicle_name = vehicle.get(
+                    "class_name",
+                    "vehicle"
+                )
 
-            label = (
-                f"{detection['class_name']} "
-                f"{detection['confidence']:.2f}"
-            )
+                track_id = vehicle.get(
+                    "track_id"
+                )
 
-            cv2.rectangle(
-                frame,
-                (x1, y1),
-                (x2, y2),
-                (0, 0, 255),
-                2
-            )
+                label = vehicle_name
 
-            cv2.putText(
-                frame,
-                label,
-                (x1, max(y1 - 10, 20)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 0, 255),
-                2
-            )
+                if track_id is not None:
 
-        # ------------------------------------------------
-        # Information overlay
-        # ------------------------------------------------
+                    label += (
+                        f" ID:{track_id}"
+                    )
 
-        cv2.putText(
-            frame,
-            f"Vehicles: {len(vehicles)}",
-            (20, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2
+                cv2.rectangle(
+                    frame,
+                    (x1, y1),
+                    (x2, y2),
+                    (0, 255, 0),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    label,
+                    (
+                        x1,
+                        max(y1 - 10, 25)
+                    ),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
+
+            # =========================================
+            # ANPR
+            # =========================================
+
+            for plate in anpr:
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    plate["bbox"]
+                )
+
+                track_id = plate.get(
+                    "track_id"
+                )
+
+                plate_text = plate.get(
+                    "plate",
+                    ""
+                )
+
+                ocr_confidence = plate.get(
+                    "ocr_confidence",
+                    0.0
+                )
+
+                label = (
+                    f"Plate ID:{track_id}"
+                )
+
+                if plate_text:
+
+                    label += (
+                        f" | {plate_text}"
+                        f" ({ocr_confidence:.2f})"
+                    )
+
+                cv2.rectangle(
+                    frame,
+                    (x1, y1),
+                    (x2, y2),
+                    (255, 0, 0),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    label,
+                    (
+                        x1,
+                        max(y1 - 10, 25)
+                    ),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (255, 0, 0),
+                    2
+                )
+
+            # =========================================
+            # POTHOLES
+            # =========================================
+
+            for pothole in potholes:
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    pothole["bbox"]
+                )
+
+                cv2.rectangle(
+                    frame,
+                    (x1, y1),
+                    (x2, y2),
+                    (0, 0, 255),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    "Pothole",
+                    (
+                        x1,
+                        max(y1 - 10, 25)
+                    ),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 0, 255),
+                    2
+                )
+
+            # =========================================
+            # ROAD DAMAGE
+            # =========================================
+
+            for damage in road_damage:
+
+                x1, y1, x2, y2 = map(
+                    int,
+                    damage["bbox"]
+                )
+
+                damage_name = damage.get(
+                    "class_name",
+                    "Road Damage"
+                )
+
+                cv2.rectangle(
+                    frame,
+                    (x1, y1),
+                    (x2, y2),
+                    (0, 165, 255),
+                    2
+                )
+
+                cv2.putText(
+                    frame,
+                    damage_name,
+                    (
+                        x1,
+                        max(y1 - 10, 25)
+                    ),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 165, 255),
+                    2
+                )
+
+            # =========================================
+            # WRITE FRAME
+            # =========================================
+
+            out.write(frame)
+
+            # =========================================
+            # PROGRESS
+            # =========================================
+
+            if frame_count % 50 == 0:
+
+                if total_frames > 0:
+
+                    progress = (
+                        frame_count
+                        / total_frames
+                    ) * 100
+
+                    print(
+                        f"Processing: "
+                        f"{frame_count}/"
+                        f"{total_frames} "
+                        f"({progress:.1f}%)"
+                    )
+
+    except Exception as e:
+
+        print(
+            f"PROCESSING ERROR: {e}"
         )
 
-        cv2.putText(
-            frame,
-            f"Potholes: {len(potholes)}",
-            (20, 60),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2
-        )
+        raise
 
-        cv2.putText(
-            frame,
-            f"Road Damage: {len(road_damage)}",
-            (20, 90),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2
-        )
+    finally:
 
-        # ------------------------------------------------
-        # Save processed frame
-        # ------------------------------------------------
+        cap.release()
+        out.release()
 
-        writer.write(frame)
-
-        # Print progress every 30 frames
-        if frame_number % 30 == 0:
-
-            print(
-                f"Processed "
-                f"{frame_number}/{total_frames} frames"
-            )
-
-    # ------------------------------------------------
-    # Cleanup
-    # ------------------------------------------------
-
-    cap.release()
-    writer.release()
-
-    print("\n" + "=" * 60)
-    print("AI VIDEO PROCESSING FINISHED")
+    print("=" * 60)
+    print("AI PROCESSING COMPLETE")
     print("=" * 60)
 
-    print(f"Output: {output_path}")
+    # =================================================
+    # Convert AVI → H.264 MP4
+    # =================================================
 
-    print(f"Total vehicle detections: {total_vehicles}")
-    print(f"Total pothole detections: {total_potholes}")
-    print(f"Total road damage detections: {total_road_damage}")
+    print("Converting output to H.264 MP4...")
 
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(temp_path),
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        str(output_path)
+    ]
+
+    try:
+
+        subprocess.run(
+            command,
+            check=True
+        )
+
+        print(
+            "H.264 conversion successful."
+        )
+
+    except FileNotFoundError:
+
+        print(
+            "ERROR: FFmpeg is not installed "
+            "or not available in PATH."
+        )
+
+        # Don't silently pretend the conversion worked.
+        # Keep the temporary file for debugging.
+
+        return
+
+    except subprocess.CalledProcessError as e:
+
+        print(
+            f"FFmpeg conversion failed: {e}"
+        )
+
+        return
+
+    # =================================================
+    # Remove temporary file
+    # =================================================
+
+    if temp_path.exists():
+
+        temp_path.unlink()
+
+    print("=" * 60)
+    print("PROCESSING COMPLETE")
+    print(f"FINAL OUTPUT: {output_path}")
     print("=" * 60)
