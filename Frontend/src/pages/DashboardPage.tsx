@@ -64,7 +64,7 @@ export const DashboardPage: React.FC = () => {
       textColor: 'text-slate-900'
     },
     {
-      title: 'AI EVENTS TODAY',
+      title: 'EVENTS TODAY',
       value: '0',
       supporting: 'No events recorded',
       border: 'border-blue-600',
@@ -159,18 +159,12 @@ export const DashboardPage: React.FC = () => {
       {/* CITY INTELLIGENCE MAP & LIVE AI EVENTS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* City Intelligence Map */}
+        {/* GIS MAP */}
         <div className="lg:col-span-2 urbansense-card p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="border-b border-slate-100 pb-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-base">City Intelligence Map</h3>
-              <p className="text-xs text-slate-500">GIS spatial view of AI detections and monitoring nodes</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                System Operational
-              </span>
+              <h3 className="font-bold text-slate-900 text-base">GIS MAP</h3>
+              <p className="text-xs text-slate-500">GIS spatial view of detected incidents and monitoring nodes</p>
             </div>
           </div>
 
@@ -221,11 +215,11 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Live AI Events Card */}
+        {/* Live Events Card */}
         <div className="urbansense-card p-5 space-y-4 flex flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Live AI Events</h3>
+              <h3 className="font-bold text-slate-900 text-base">Live Events</h3>
               <p className="text-xs text-slate-500">Real-time computer vision alerts</p>
             </div>
             <button
