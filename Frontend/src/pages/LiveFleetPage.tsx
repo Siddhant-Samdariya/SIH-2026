@@ -25,7 +25,8 @@ import {
   Server,
   Zap,
   Layers,
-  Settings
+  Settings,
+  Inbox
 } from 'lucide-react';
 
 interface BusFleetItem {
@@ -78,27 +79,27 @@ export const LiveFleetPage: React.FC = () => {
       number: 'BUS 042',
       ipAddress: '192.168.1.142:554',
       protocol: 'RTSP',
-      status: 'Online',
-      cameraStatus: 'Front IP Cam (Full HD)',
-      vehiclesDetected: 127,
-      activeAlerts: 3,
-      lastSeen: 'Just now',
+      status: 'Offline',
+      cameraStatus: 'Camera Inactive',
+      vehiclesDetected: 0,
+      activeAlerts: 0,
+      lastSeen: 'Idle',
       route: 'Route 12 - 4th Ave',
-      speed: '24 MPH',
-      location: 'Main St & 5th Ave (LAT: 40.7128° N, LNG: 74.0060° W)'
+      speed: '0 MPH',
+      location: 'Depot Terminal 1'
     },
     {
       id: 'BUS-018',
       number: 'BUS 018',
       ipAddress: '192.168.1.118:8080',
       protocol: 'HTTP/MJPEG',
-      status: 'Online',
-      cameraStatus: 'Front IP Cam Active',
-      vehiclesDetected: 94,
-      activeAlerts: 1,
-      lastSeen: 'Just now',
+      status: 'Offline',
+      cameraStatus: 'Camera Inactive',
+      vehiclesDetected: 0,
+      activeAlerts: 0,
+      lastSeen: 'Idle',
       route: 'Route 4 - Ring Road Corridor',
-      speed: '18 MPH',
+      speed: '0 MPH',
       location: 'Station Road Junction'
     },
     {
@@ -110,7 +111,7 @@ export const LiveFleetPage: React.FC = () => {
       cameraStatus: 'Camera Inactive',
       vehiclesDetected: 0,
       activeAlerts: 0,
-      lastSeen: '8 minutes ago',
+      lastSeen: 'Idle',
       route: 'Route 7 - MG Road Express',
       speed: '0 MPH',
       location: 'Depot Terminal 2'
@@ -120,13 +121,13 @@ export const LiveFleetPage: React.FC = () => {
       number: 'BUS 007',
       ipAddress: '192.168.1.107:8554',
       protocol: 'WebRTC',
-      status: 'Online',
-      cameraStatus: 'Dual Dashcam Stream',
-      vehiclesDetected: 142,
-      activeAlerts: 2,
-      lastSeen: 'Just now',
+      status: 'Offline',
+      cameraStatus: 'Camera Inactive',
+      vehiclesDetected: 0,
+      activeAlerts: 0,
+      lastSeen: 'Idle',
       route: 'Route 1 - Downtown Express',
-      speed: '31 MPH',
+      speed: '0 MPH',
       location: 'Central Plaza Crossing'
     },
     {
@@ -134,13 +135,13 @@ export const LiveFleetPage: React.FC = () => {
       number: 'BUS 055',
       ipAddress: '192.168.1.155:554',
       protocol: 'ONVIF',
-      status: 'Online',
-      cameraStatus: 'Rear Door IP Camera',
-      vehiclesDetected: 88,
+      status: 'Offline',
+      cameraStatus: 'Camera Inactive',
+      vehiclesDetected: 0,
       activeAlerts: 0,
-      lastSeen: 'Just now',
+      lastSeen: 'Idle',
       route: 'Route 9 - Outer Ring Flyover',
-      speed: '28 MPH',
+      speed: '0 MPH',
       location: 'North District Bridge'
     }
   ]);
@@ -151,11 +152,11 @@ export const LiveFleetPage: React.FC = () => {
   const [feedMode, setFeedMode] = useState<'fleet' | 'ip_camera' | 'video_upload'>('fleet');
 
   // IP Camera Form State
-  const [inputIp, setInputIp] = useState<string>('192.168.1.142:554/live');
+  const [inputIp, setInputIp] = useState<string>('');
   const [inputProtocol, setInputProtocol] = useState<'RTSP' | 'HTTP/MJPEG' | 'WebRTC' | 'ONVIF'>('RTSP');
   const [cameraPosition, setCameraPosition] = useState<string>('Front Dashcam');
-  const [isIpConnected, setIsIpConnected] = useState<boolean>(true);
-  const [ipConnectMsg, setIpConnectMsg] = useState<string>('Connected to RTSP stream at 192.168.1.142:554');
+  const [isIpConnected, setIsIpConnected] = useState<boolean>(false);
+  const [ipConnectMsg, setIpConnectMsg] = useState<string>('');
 
   // Video Upload & Player State
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
@@ -321,30 +322,30 @@ export const LiveFleetPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="urbansense-card p-5">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Buses</p>
-          <h3 className="text-3xl font-extrabold text-slate-900 mt-1">42</h3>
+          <h3 className="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
           <p className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Connected to UrbanSense Core
+            <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" /> 0 Connected
           </p>
         </div>
 
         <div className="urbansense-card p-5">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active IP Camera Streams</p>
-          <h3 className="text-3xl font-extrabold text-emerald-600 mt-1">39</h3>
+          <h3 className="text-3xl font-extrabold text-[#1b365d] mt-1">0</h3>
           <p className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-1">
-            <Wifi className="w-3.5 h-3.5 text-emerald-600" /> RTSP / HTTP Streams Online
+            <Wifi className="w-3.5 h-3.5 text-slate-400" /> 0 Streams Online
           </p>
         </div>
 
         <div className="urbansense-card p-5">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">IP Feed Bandwidth</p>
-          <h3 className="text-3xl font-extrabold text-blue-600 mt-1">124 <span className="text-sm font-normal text-slate-500">Mbps</span></h3>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Avg Latency: 45ms</p>
+          <h3 className="text-3xl font-extrabold text-blue-600 mt-1">0 <span className="text-sm font-normal text-slate-500">Mbps</span></h3>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Avg Latency: 0ms</p>
         </div>
 
         <div className="urbansense-card p-5">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Alerts Today</p>
-          <h3 className="text-3xl font-extrabold text-amber-600 mt-1">18</h3>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Potholes, rash driving & traffic</p>
+          <h3 className="text-3xl font-extrabold text-amber-600 mt-1">0</h3>
+          <p className="text-xs text-slate-500 mt-1 font-medium">No alerts recorded</p>
         </div>
       </div>
 
@@ -400,32 +401,6 @@ export const LiveFleetPage: React.FC = () => {
             </select>
           </div>
         </form>
-
-        {/* Quick IP Presets */}
-        <div className="flex items-center gap-2 pt-1 text-xs text-slate-500 border-t border-slate-100">
-          <span className="font-semibold text-slate-600 text-[11px]">Quick Presets:</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { label: 'Bus 042 Dashcam', ip: '192.168.1.142:554' },
-              { label: 'Bus 018 HTTP Feed', ip: '192.168.1.118:8080' },
-              { label: 'Bus 007 WebRTC', ip: '192.168.1.107:8554' }
-            ].map((preset) => (
-              <button
-                key={preset.ip}
-                type="button"
-                onClick={() => {
-                  setInputIp(preset.ip);
-                  setIsIpConnected(true);
-                  setFeedMode('ip_camera');
-                  setIpConnectMsg(`Connected to ${preset.label} (${preset.ip})`);
-                }}
-                className="bg-slate-100 hover:bg-slate-200 border border-slate-300 px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold text-[#1b365d] transition-colors"
-              >
-                + {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* CCTV FOOTAGE / VIDEO UPLOAD SECTION & PLAYER AREA */}
@@ -580,34 +555,6 @@ export const LiveFleetPage: React.FC = () => {
                 <p className="text-xs text-slate-500 mt-1 text-center max-w-xs font-sans">
                   Select a live bus camera stream or upload video footage to view computer vision telemetry.
                 </p>
-
-                {/* Top Watermark Controls */}
-                <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2 font-mono text-xs">
-                  <span className="px-2.5 py-1 bg-red-600 text-white font-bold rounded flex items-center gap-1.5 shadow">
-                    <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                    LIVE
-                  </span>
-                  <span className="px-2.5 py-1 bg-slate-900/80 text-white border border-slate-700 rounded font-semibold">
-                    {selectedBus.number}
-                  </span>
-                  <span className="px-2.5 py-1 bg-cyan-900/90 text-cyan-200 border border-cyan-700 rounded font-semibold">
-                    IP: {feedMode === 'ip_camera' ? inputIp : selectedBus.ipAddress}
-                  </span>
-                </div>
-
-                <div className="absolute top-3 right-3 px-2.5 py-1 bg-slate-900/80 text-slate-300 border border-slate-700 rounded font-mono text-xs">
-                  🎥 30 FPS • H.264
-                </div>
-
-                {/* Bottom Watermark Telemetry */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-900/90 border border-slate-700 px-3 py-2 rounded text-white font-mono text-xs">
-                  <span className="flex items-center gap-2 text-cyan-300 font-semibold">
-                    ⚙ UrbanSense AI Active
-                  </span>
-                  <span className="text-slate-300 text-[11px] truncate">
-                    {selectedBus.location} | SPEED: {selectedBus.speed}
-                  </span>
-                </div>
               </div>
             )}
 
@@ -666,71 +613,12 @@ export const LiveFleetPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-4 text-xs font-sans">
-              {/* Item 1 */}
-              <div className="space-y-1.5 pb-3 border-b border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-extrabold text-red-600 uppercase tracking-wider">
-                    ● CRITICAL
-                  </span>
-                  <span className="text-[11px] text-slate-400">Just now</span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-sm">Rash driving detected</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  Bus 042 swerved sharply across lane markings. Velocity delta: +12mph/s.
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-mono text-slate-400">IP: {selectedBus.ipAddress}</span>
-                  <button className="px-2.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded text-[10px] border border-slate-200">
-                    Review Clip
-                  </button>
-                </div>
-              </div>
-
-              {/* Item 2 */}
-              <div className="space-y-1.5 pb-3 border-b border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-extrabold text-amber-700 uppercase tracking-wider">
-                    ● INFRASTRUCTURE
-                  </span>
-                  <span className="text-[11px] text-slate-400">2 min ago</span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-sm">Severe Pothole Detected</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  Est. depth &gt; 4in. Logged for maintenance crew review.
-                </p>
-                <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> Main St & 5th Ave
-                </p>
-              </div>
-
-              {/* Item 3 */}
-              <div className="space-y-1.5 pb-3 border-b border-slate-100">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">
-                    ● TRAFFIC
-                  </span>
-                  <span className="text-[11px] text-slate-400">15 min ago</span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-sm">Traffic density increased</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  Flow rate dropped below 15mph average for sector 4A.
-                </p>
-              </div>
-
-              {/* Item 4 */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                    ● SYSTEM
-                  </span>
-                  <span className="text-[11px] text-slate-400">1 hr ago</span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-sm">IP Camera Ping Success</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">
-                  Stream handshake completed on port 554. Zero frame drops.
-                </p>
-              </div>
+            <div className="py-12 text-center space-y-2 font-sans text-slate-400">
+              <Inbox className="w-8 h-8 text-slate-300 mx-auto" />
+              <h4 className="font-bold text-slate-700 text-sm">No telemetry alerts recorded</h4>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                Real-time alerts will appear here when active camera streams detect anomalies.
+              </p>
             </div>
           </div>
         </div>
@@ -893,7 +781,7 @@ export const LiveFleetPage: React.FC = () => {
                           }}
                           className={`text-xs font-semibold px-3 py-1 rounded transition-colors ${
                             isSelected && feedMode === 'fleet'
-                              ? 'bg-[#1b365d] text-white'
+                              ? 'bg-[#1b365d]'
                               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                           }`}
                         >
@@ -913,4 +801,3 @@ export const LiveFleetPage: React.FC = () => {
 };
 
 export default LiveFleetPage;
-

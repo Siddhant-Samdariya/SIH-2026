@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLiveTraffic } from '../hooks/useLiveTraffic';
 import { MapView } from '../components/MapView';
 import { Camera } from '../types/itms';
-import { MapPin, Eye, Layers, Inbox } from 'lucide-react';
+import { Eye, Inbox } from 'lucide-react';
 
 export const TrafficMapPage: React.FC = () => {
   const { cameras, alerts } = useLiveTraffic();
@@ -44,12 +44,9 @@ export const TrafficMapPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <MapView
-            cameras={activeFilter === 'incidents' ? [] : cameras}
-            alerts={activeFilter === 'cameras' ? [] : alerts}
-            selectedCameraId={selectedCam?.id}
-            onSelectCamera={(cam) => setSelectedCam(cam)}
+            center={[20.5937, 78.9629]}
+            zoom={5}
             height="640px"
-            zoom={6}
           />
         </div>
 
@@ -96,7 +93,7 @@ export const TrafficMapPage: React.FC = () => {
               </div>
             ) : (
               <p className="text-xs text-slate-500 py-8 text-center font-sans">
-                Click any camera or incident marker on the GIS map to inspect details.
+                Select a GIS marker on the map to inspect details.
               </p>
             )}
           </div>
