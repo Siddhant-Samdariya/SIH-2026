@@ -40,8 +40,6 @@ backend/.venv/
 # ==========================================
 # Large ML Model Weights & Checkpoints
 # ==========================================
-*.pt
-*.pth
 *.onnx
 *.engine
 *.h5
