@@ -57,7 +57,6 @@ models/weights/
 # ==========================================
 # Video & Media Files / Processing Outputs
 # ==========================================
-*.mp4
 *.avi
 *.mov
 *.mkv
