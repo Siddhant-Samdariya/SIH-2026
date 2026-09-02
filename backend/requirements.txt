@@ -1,0 +1,17 @@
+# Exact versions verified in current UrbanSense AI environment
+numpy==2.5.2
+opencv-python==4.12.0.88
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
+pillow-avif-plugin==1.6.0
+pandas==2.3.2
+requests==2.32.5
+fastapi==0.124.0
+uvicorn==0.38.0
+python-multipart>=0.0.9
+safetensors==0.6.2
+
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+ultralytics==8.4.135
