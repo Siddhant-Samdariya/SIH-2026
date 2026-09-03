@@ -9,19 +9,8 @@ for p in [str(CURRENT_DIR), str(PARENT_DIR)]:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-try:
-    from Backend.api.video import router as video_router
-    from Backend.api.detection import router as detection_router
-    from Backend.api.mock_telemetry import router as telemetry_router
-except ModuleNotFoundError:
-    try:
-        from backend.api.video import router as video_router
-        from backend.api.detection import router as detection_router
-        from backend.api.mock_telemetry import router as telemetry_router
-    except ModuleNotFoundError:
-        from api.video import router as video_router
-        from api.detection import router as detection_router
-        from api.mock_telemetry import router as telemetry_router
+from Backend.api.video import router as video_router
+from Backend.api.detection import router as detection_router
 
 
 app = FastAPI(
@@ -31,7 +20,6 @@ app = FastAPI(
 )
 app.include_router(video_router)
 app.include_router(detection_router)
-app.include_router(telemetry_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
