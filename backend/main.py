@@ -11,11 +11,35 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from Backend.database.connection import init_db
-from Backend.api.video import router as video_router
-from Backend.api.detection import router as detection_router
-from Backend.api.detection import ai_router
+try:
+    from Backend.database.connection import init_db
+    from Backend.api.video import router as video_router
+    from Backend.api.detection import router as detection_router
+    from Backend.api.detection import ai_router
+except ModuleNotFoundError:
+    try:
+        from backend.database.connection import init_db
+        from backend.api.video import router as video_router
+        from backend.api.detection import router as detection_router
+        from backend.api.detection import ai_router
+    except ModuleNotFoundError:
+        from database.connection import init_db
+        from api.video import router as video_router
+        from api.detection import router as detection_router
+        from api.detection import ai_router
 
+try:
+    from backend.api.mock_telemetry import router as telemetry_router
+except ModuleNotFoundError:
+    from api.mock_telemetry import router as telemetry_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+origins = ["*"]
 
 app = FastAPI(
     title="SIH Transport AI",
@@ -28,6 +52,8 @@ app = FastAPI(
 app.include_router(video_router)
 app.include_router(detection_router)
 app.include_router(ai_router)
+app.include_router(telemetry_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

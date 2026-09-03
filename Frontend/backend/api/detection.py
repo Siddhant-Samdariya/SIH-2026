@@ -1,12 +1,23 @@
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Depends, HTTPException
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
 from pathlib import Path
 import uuid
 import shutil
 from typing import Optional, Dict, Any
 
-<<<<<<< HEAD
+try:
+    from sqlalchemy.orm import Session
+except Exception:
+    Session = Any
+
+try:
+    from Backend.database.connection import get_db, SessionLocal
+except ModuleNotFoundError:
+    try:
+        from backend.database.connection import get_db, SessionLocal
+    except ModuleNotFoundError:
+        from database.connection import get_db, SessionLocal
+
 try:
     from Backend.ai.pipeline import TransportAIPipeline
 except ModuleNotFoundError:
@@ -15,26 +26,34 @@ except ModuleNotFoundError:
     except ModuleNotFoundError:
         from ai.pipeline import TransportAIPipeline
 
-=======
-from Backend.database.connection import get_db, SessionLocal
-from Backend.database import crud
-from Backend.database.models import ProcessingJob
-from Backend.ai.pipeline import TransportAIPipeline
-from Backend.services.processing_service import (
-    execute_video_processing,
-    OUTPUT_DIR,
-    UPLOAD_DIR,
-    FFMPEG_PATH,
-    FFPROBE_PATH
-)
->>>>>>> 032ed559f575476c6c2f7ff0684d6abff5904094
+try:
+    from Backend.services.processing_service import (
+        execute_video_processing,
+        OUTPUT_DIR,
+        UPLOAD_DIR,
+        FFMPEG_PATH,
+        FFPROBE_PATH
+    )
+except ModuleNotFoundError:
+    try:
+        from backend.services.processing_service import (
+            execute_video_processing,
+            OUTPUT_DIR,
+            UPLOAD_DIR,
+            FFMPEG_PATH,
+            FFPROBE_PATH
+        )
+    except ModuleNotFoundError:
+        OUTPUT_DIR = Path(__file__).resolve().parent.parent / "outputs"
+        UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
+        FFMPEG_PATH = "ffmpeg"
+        FFPROBE_PATH = "ffprobe"
+        execute_video_processing = None
 
 router = APIRouter(
     prefix="/api/detection",
     tags=["Detection"]
 )
-
-<<<<<<< HEAD
 
 # =====================================================
 # Paths
@@ -55,14 +74,18 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 # Load AI pipeline once
 # --------------------------------------------------
 
-print("=" * 60)
-print("LOADING AI PIPELINE")
-print("=" * 60)
-
-=======
-# AI Pipeline initialized once on GPU (device=0)
->>>>>>> 032ed559f575476c6c2f7ff0684d6abff5904094
-pipeline = TransportAIPipeline()
+# AI Pipeline initialized once
+try:
+    print("=" * 60)
+    print("LOADING AI PIPELINE")
+    print("=" * 60)
+    pipeline = TransportAIPipeline()
+    print("=" * 60)
+    print("AI PIPELINE READY")
+    print("=" * 60)
+except Exception as err:
+    print(f"Warning: AI Pipeline model initialization deferred ({err})")
+    pipeline = None
 
 
 # =====================================================
@@ -97,7 +120,7 @@ def run_background_processing(
 async def process_video_async(
     filename: str,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Any = Depends(get_db)
 ):
     """
     Queue an uploaded video for processing.

@@ -2,9 +2,16 @@ from pathlib import Path
 from collections import defaultdict, Counter
 import re
 
-import easyocr
-import torch
-from ultralytics import YOLO
+try:
+    import easyocr
+    import torch
+    from ultralytics import YOLO
+    HAS_ANPR_DEPS = True
+except ModuleNotFoundError:
+    HAS_ANPR_DEPS = False
+    easyocr = None
+    torch = None
+    YOLO = None
 
 
 class ANPRDetector:

@@ -1,7 +1,22 @@
-from .vehicle_detector import VehicleDetector
-from .pothole_detector import PotholeDetector
-from .road_damage_detector import RoadDamageDetector
-from .anpr_detector import ANPRDetector
+try:
+    from .vehicle_detector import VehicleDetector
+except Exception:
+    VehicleDetector = None
+
+try:
+    from .pothole_detector import PotholeDetector
+except Exception:
+    PotholeDetector = None
+
+try:
+    from .road_damage_detector import RoadDamageDetector
+except Exception:
+    RoadDamageDetector = None
+
+try:
+    from .anpr_detector import ANPRDetector
+except Exception:
+    ANPRDetector = None
 
 
 class TransportAIPipeline:
@@ -12,10 +27,10 @@ class TransportAIPipeline:
         print("Initializing Transport AI Pipeline")
         print("=" * 60)
 
-        self.vehicle_detector = VehicleDetector()
-        self.pothole_detector = PotholeDetector()
-        self.road_damage_detector = RoadDamageDetector()
-        self.anpr_detector = ANPRDetector()
+        self.vehicle_detector = VehicleDetector() if VehicleDetector else None
+        self.pothole_detector = PotholeDetector() if PotholeDetector else None
+        self.road_damage_detector = RoadDamageDetector() if RoadDamageDetector else None
+        self.anpr_detector = ANPRDetector() if ANPRDetector else None
 
         print("=" * 60)
         print("All AI models loaded successfully")
