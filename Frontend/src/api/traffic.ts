@@ -10,9 +10,12 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
       totalVehiclesDetected: data.traffic?.vehicles_detected ?? mockDashboardMetrics.totalVehiclesDetected,
       currentTrafficDensity: data.traffic?.density ?? mockDashboardMetrics.currentTrafficDensity,
       averageVehicleSpeed: data.traffic?.average_speed ?? mockDashboardMetrics.averageVehicleSpeed,
-      anprAccurateRate: 98.4,
-      activeIncidentsCount: data.safety_alerts?.total ?? mockDashboardMetrics.activeIncidentsCount,
-      activeCamerasCount: data.monitoring_sources?.online ?? mockDashboardMetrics.activeCamerasCount,
+      activeIncidents: data.safety_alerts?.total ?? mockDashboardMetrics.activeIncidents,
+      camerasOnline: data.monitoring_sources?.online ?? mockDashboardMetrics.camerasOnline,
+      totalCameras: data.monitoring_sources?.total ?? mockDashboardMetrics.totalCameras,
+      congestionStatus: data.traffic?.congestion_status ?? mockDashboardMetrics.congestionStatus,
+      waterloggingIncidents: data.safety_alerts?.waterlogging ?? mockDashboardMetrics.waterloggingIncidents,
+      roadInfrastructureIssues: (data.safety_alerts?.potholes || 0) + (data.safety_alerts?.road_damage || 0) || mockDashboardMetrics.roadInfrastructureIssues,
     };
   }, mockDashboardMetrics);
 };
