@@ -12,11 +12,17 @@ except Exception:
 
 try:
     from Backend.database.connection import get_db, SessionLocal
+    from Backend.database import crud
+    from Backend.database.models import ProcessingJob
 except ModuleNotFoundError:
     try:
         from backend.database.connection import get_db, SessionLocal
+        from backend.database import crud
+        from backend.database.models import ProcessingJob
     except ModuleNotFoundError:
         from database.connection import get_db, SessionLocal
+        from database import crud
+        from database.models import ProcessingJob
 
 try:
     from Backend.ai.pipeline import TransportAIPipeline
@@ -88,6 +94,16 @@ except Exception as err:
     pipeline = None
 
 
+def get_pipeline():
+    global pipeline
+    if pipeline is None:
+        try:
+            pipeline = TransportAIPipeline()
+        except Exception as e:
+            print(f"[ERROR] Could not load AI pipeline: {e}")
+    return pipeline
+
+
 # =====================================================
 # Background Worker Function
 # =====================================================
@@ -102,7 +118,7 @@ def run_background_processing(
         execute_video_processing(
             input_path=input_path,
             output_path=output_path,
-            pipeline=pipeline,
+            pipeline=get_pipeline(),
             job_id=job_id
         )
     except Exception as e:
@@ -280,7 +296,7 @@ async def ai_process_video_sync(
     result = execute_video_processing(
         input_path=input_path,
         output_path=output_path,
-        pipeline=pipeline,
+        pipeline=get_pipeline(),
         job_id=job.id
     )
 

@@ -33,6 +33,8 @@ interface MapViewProps {
   className?: string;
   gisMarkers?: GisMarker[];
   fetchFromBackend?: boolean;
+  cameras?: any;
+  alerts?: any;
 }
 
 // Map recenter helper component

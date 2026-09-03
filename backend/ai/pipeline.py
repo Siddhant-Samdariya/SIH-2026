@@ -39,19 +39,19 @@ class TransportAIPipeline:
     def process_frame(self, frame, frame_number):
 
         # Vehicle detection + ByteTrack
-        vehicles = self.vehicle_detector.detect(frame)
+        vehicles = self.vehicle_detector.detect(frame) if self.vehicle_detector else []
 
         # Pothole detection
-        potholes = self.pothole_detector.detect(frame)
+        potholes = self.pothole_detector.detect(frame) if self.pothole_detector else []
 
         # Road damage detection
-        road_damage = self.road_damage_detector.detect(frame)
+        road_damage = self.road_damage_detector.detect(frame) if self.road_damage_detector else []
 
         # ANPR detection + ByteTrack + EasyOCR
         anpr = self.anpr_detector.detect(
             frame,
             frame_number
-        )
+        ) if self.anpr_detector else []
 
         return {
             "vehicles": vehicles,
