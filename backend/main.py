@@ -33,6 +33,17 @@ try:
 except ModuleNotFoundError:
     from api.mock_telemetry import router as telemetry_router
 
+try:
+    from Backend.api.analytics import router as analytics_router
+except ModuleNotFoundError:
+    try:
+        from backend.api.analytics import router as analytics_router
+    except ModuleNotFoundError:
+        try:
+            from api.analytics import router as analytics_router
+        except ModuleNotFoundError:
+            analytics_router = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +64,8 @@ app.include_router(video_router)
 app.include_router(detection_router)
 app.include_router(ai_router)
 app.include_router(telemetry_router)
+if analytics_router:
+    app.include_router(analytics_router)
 
 app.add_middleware(
     CORSMiddleware,
