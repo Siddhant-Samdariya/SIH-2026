@@ -35,7 +35,7 @@ export const ReportsPage: React.FC = () => {
           Document & Report Center
         </h2>
         <p className="text-sm text-slate-600 font-normal">
-          Official municipal reports generated from UrbanSense bus fleet computer vision and GIS telemetry.
+          Official municipal reports generated from MARGANETRA (मार्गनेत्र) bus fleet computer vision and GIS telemetry.
         </p>
       </div>
 

@@ -360,7 +360,7 @@ export const LiveFleetPage: React.FC = () => {
               ADD BUS CAMERA IP / CONNECT LIVE STREAM
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              Configure RTSP / HTTP IP stream connection for live UrbanSense AI computer vision telemetry
+              Configure RTSP / HTTP IP stream connection for live MARGANETRA (मार्गनेत्र) computer vision telemetry
             </p>
           </div>
         </div>
@@ -628,7 +628,7 @@ export const LiveFleetPage: React.FC = () => {
       <div className="urbansense-card overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-slate-900 text-base">Connected UrbanSense Fleet & IP Camera Registry</h3>
+            <h3 className="font-bold text-slate-900 text-base">Connected MARGANETRA (मार्गनेत्र) Fleet & IP Camera Registry</h3>
             <p className="text-xs text-slate-500">
               Manage camera IP addresses, streaming protocols, and select buses to inspect computer vision telemetry.
             </p>

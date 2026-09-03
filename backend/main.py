@@ -1,20 +1,20 @@
+import sys
+from pathlib import Path
+
+CURRENT_DIR = Path(__file__).resolve().parent
+PARENT_DIR = CURRENT_DIR.parent
+for p in [str(CURRENT_DIR), str(PARENT_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from Backend.database.connection import init_db
 from Backend.api.video import router as video_router
-from Backend.api.detection import router as detection_router, ai_router
-from Backend.api.analytics import router as analytics_router
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize SQLite database and tables
-    print("[Startup] Initializing SQLite database...")
-    init_db()
-    yield
-    print("[Shutdown] Transport AI backend shut down cleanly.")
+from Backend.api.detection import router as detection_router
+from Backend.api.detection import ai_router
 
 
 app = FastAPI(
@@ -28,20 +28,6 @@ app = FastAPI(
 app.include_router(video_router)
 app.include_router(detection_router)
 app.include_router(ai_router)
-app.include_router(analytics_router)
-
-# CORS Configuration
-# Supports React development servers (Vite 5173, Create-React-App 3000) and API calls
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "*"
-]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

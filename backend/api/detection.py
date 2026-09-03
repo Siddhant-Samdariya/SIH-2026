@@ -6,6 +6,16 @@ import uuid
 import shutil
 from typing import Optional, Dict, Any
 
+<<<<<<< HEAD
+try:
+    from Backend.ai.pipeline import TransportAIPipeline
+except ModuleNotFoundError:
+    try:
+        from backend.ai.pipeline import TransportAIPipeline
+    except ModuleNotFoundError:
+        from ai.pipeline import TransportAIPipeline
+
+=======
 from Backend.database.connection import get_db, SessionLocal
 from Backend.database import crud
 from Backend.database.models import ProcessingJob
@@ -17,13 +27,41 @@ from Backend.services.processing_service import (
     FFMPEG_PATH,
     FFPROBE_PATH
 )
+>>>>>>> 032ed559f575476c6c2f7ff0684d6abff5904094
 
 router = APIRouter(
     prefix="/api/detection",
     tags=["Detection"]
 )
 
+<<<<<<< HEAD
+
+# =====================================================
+# Paths
+# =====================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+UPLOAD_DIR = PROJECT_ROOT / "Backend" / "uploads"
+OUTPUT_DIR = PROJECT_ROOT / "Backend" / "outputs"
+TEMP_DIR = OUTPUT_DIR / "temp"
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# --------------------------------------------------
+# Load AI pipeline once
+# --------------------------------------------------
+
+print("=" * 60)
+print("LOADING AI PIPELINE")
+print("=" * 60)
+
+=======
 # AI Pipeline initialized once on GPU (device=0)
+>>>>>>> 032ed559f575476c6c2f7ff0684d6abff5904094
 pipeline = TransportAIPipeline()
 
 

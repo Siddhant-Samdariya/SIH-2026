@@ -50,7 +50,7 @@ export function App() {
           <Route path="live-fleet" element={<LiveFleetPage />} />
           <Route path="map" element={<TrafficMapPage />} />
           <Route path="incidents" element={<IncidentsPage />} />
-          <Route path="road-conditions" element={<RoadConditionsPage />} />
+          <Route path="road-conditions" element={<Navigate to="/incidents" replace />} />
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="reports" element={<ReportsPage />} />

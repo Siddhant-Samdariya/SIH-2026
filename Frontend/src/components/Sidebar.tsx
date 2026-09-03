@@ -22,7 +22,6 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     { name: 'Live Fleet', path: '/live-fleet', icon: Bus },
     { name: 'Map', path: '/map', icon: Map },
     { name: 'Incidents', path: '/incidents', icon: AlertTriangle },
-    { name: 'Road Conditions', path: '/road-conditions', icon: Wrench },
     { name: 'Vehicles', path: '/vehicles', icon: Car },
     { name: 'Analytics', path: '/analytics', icon: BarChart3 },
     { name: 'Reports', path: '/reports', icon: FileText },
@@ -36,8 +35,8 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           <Globe className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="font-bold text-slate-900 text-lg leading-tight tracking-tight font-sans">UrbanSense</h1>
-          <p className="text-xs text-slate-500 font-medium">Urban Intelligence</p>
+          <h1 className="font-bold text-slate-900 text-lg leading-tight tracking-tight font-sans">MARGANETRA</h1>
+          <p className="text-xs text-slate-500 font-medium">मार्गनेत्र</p>
         </div>
       </div>
 

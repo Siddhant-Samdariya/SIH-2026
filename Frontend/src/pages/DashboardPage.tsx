@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveTraffic } from '../hooks/useLiveTraffic';
 import { TrafficChart } from '../components/TrafficChart';
 import { MapView } from '../components/MapView';
@@ -50,6 +50,34 @@ export const DashboardPage: React.FC = () => {
     cameras: true
   });
 
+  const [dashboardStats, setDashboardStats] = useState<{
+    total_vehicles: number;
+    traffic_density: string;
+    total_incidents: number;
+    road_issues: number;
+  }>({
+    total_vehicles: 0,
+    traffic_density: 'Normal',
+    total_incidents: 0,
+    road_issues: 0
+  });
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/dashboard/stats')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setDashboardStats({
+            total_vehicles: data.total_vehicles || 0,
+            traffic_density: data.traffic_density || 'Normal',
+            total_incidents: data.total_incidents || 0,
+            road_issues: data.road_issues || 0
+          });
+        }
+      })
+      .catch(err => console.warn('Dashboard backend stats fetch fallback:', err));
+  }, []);
+
   const toggleLayer = (layerKey: keyof LayerState) => {
     setLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
   };
@@ -65,24 +93,24 @@ export const DashboardPage: React.FC = () => {
     },
     {
       title: 'EVENTS TODAY',
-      value: '0',
-      supporting: 'No events recorded',
+      value: `${dashboardStats.total_incidents}`,
+      supporting: dashboardStats.total_incidents > 0 ? `${dashboardStats.total_incidents} logged by backend` : 'No events recorded',
       border: 'border-blue-600',
       textColor: 'text-blue-700'
     },
     {
       title: 'ROAD ISSUES',
-      value: '0',
-      supporting: '0 require attention',
+      value: `${dashboardStats.road_issues}`,
+      supporting: dashboardStats.road_issues > 0 ? `${dashboardStats.road_issues} detected by backend` : '0 require attention',
       border: 'border-amber-600',
       textColor: 'text-amber-700'
     },
     {
-      title: 'SAFETY ALERTS',
-      value: alerts.length ? `${alerts.length}` : '0',
-      supporting: '0 critical',
-      border: 'border-red-600',
-      textColor: 'text-red-700'
+      title: 'TOTAL VEHICLES',
+      value: `${dashboardStats.total_vehicles}`,
+      supporting: `Density: ${dashboardStats.traffic_density}`,
+      border: 'border-emerald-600',
+      textColor: 'text-emerald-700'
     }
   ];
 

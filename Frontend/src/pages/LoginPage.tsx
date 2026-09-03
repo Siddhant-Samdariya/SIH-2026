@@ -85,8 +85,8 @@ export const LoginPage: React.FC = () => {
             <Globe className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="font-bold text-slate-900 text-base leading-none tracking-tight">UrbanSense</h1>
-            <p className="text-[11px] text-slate-500 font-medium mt-0.5">Urban Intelligence Platform</p>
+            <h1 className="font-bold text-slate-900 text-base leading-none tracking-tight">MARGANETRA</h1>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">मार्गनेत्र</p>
           </div>
         </div>
 
@@ -109,10 +109,10 @@ export const LoginPage: React.FC = () => {
                   Enterprise Control Center
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                  UrbanSense
+                  MARGANETRA
                 </h2>
-                <p className="text-slate-300 text-xs font-semibold uppercase tracking-wider">
-                  Urban Intelligence Platform
+                <p className="text-slate-300 text-sm font-bold tracking-wider">
+                  मार्गनेत्र
                 </p>
               </div>
 
@@ -150,7 +150,7 @@ export const LoginPage: React.FC = () => {
                   Welcome back
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Sign in to access the UrbanSense control dashboard.
+                  Sign in to access the MARGANETRA control dashboard.
                 </p>
               </div>
 
@@ -238,7 +238,7 @@ export const LoginPage: React.FC = () => {
               {/* Authorized Access Disclaimer */}
               <div className="pt-2 text-center">
                 <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">
-                  Authorized Access Only • UrbanSense Command Network
+                  Authorized Access Only • MARGANETRA Command Network
                 </p>
               </div>
 
@@ -250,7 +250,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="px-6 py-3 border-t border-slate-200/80 bg-white text-center text-xs text-slate-400 font-mono">
-        UrbanSense Core Platform • Municipal Security System
+        MARGANETRA (मार्गनेत्र) Core Platform • Municipal Security System
       </footer>
     </div>
   );
