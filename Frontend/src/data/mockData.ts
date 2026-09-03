@@ -17,7 +17,7 @@ export const mockDashboardMetrics: DashboardMetrics = {
   camerasOnline: 0,
   totalCameras: 0,
   averageVehicleSpeed: 0,
-  congestionStatus: 'Optimal',
+  congestionStatus: 'Smooth',
   waterloggingIncidents: 0,
   roadInfrastructureIssues: 0
 };
