@@ -1,5 +1,21 @@
 [
   {
+    "incident_id": "INC-012",
+    "category": "traffic_congestion",
+    "type": "Traffic & Congestion",
+    "title": "Traffic & Congestion (High)",
+    "description": "fbdxdx",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T11:21:18",
+    "location": {
+      "latitude": 36.0,
+      "longitude": 77.1828,
+      "address": "Location (36.0000, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
     "incident_id": "INC-011",
     "category": "road_damage",
     "type": "Road Damage & Potholes",
