@@ -7,7 +7,7 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, subtitle = 'Urban Intelligence' }) => {
+export const Header: React.FC<HeaderProps> = ({ title, subtitle = 'मार्गनेत्र' }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,15 +19,14 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle = 'Urban Intelli
   const getBreadcrumb = () => {
     if (title) return { title, subtitle };
     switch (location.pathname) {
-      case '/': return { title: 'UrbanSense', subtitle: 'Urban Intelligence' };
-      case '/live-fleet': return { title: 'Urban Intelligence', subtitle: 'Live Fleet' };
-      case '/map': return { title: 'Urban Intelligence', subtitle: 'GIS Traffic Map' };
-      case '/incidents': return { title: 'Urban Intelligence', subtitle: 'Incident Investigation' };
-      case '/road-conditions': return { title: 'Road Conditions', subtitle: 'Urban Intelligence' };
-      case '/vehicles': return { title: 'Vehicle Intelligence', subtitle: 'Urban Intelligence' };
-      case '/analytics': return { title: 'Analytics', subtitle: 'Urban Intelligence' };
-      case '/reports': return { title: 'Reports', subtitle: 'Urban Intelligence' };
-      default: return { title: 'UrbanSense', subtitle: 'Urban Intelligence' };
+      case '/': return { title: 'MARGANETRA', subtitle: 'मार्गनेत्र' };
+      case '/live-fleet': return { title: 'MARGANETRA', subtitle: 'Live Fleet' };
+      case '/map': return { title: 'MARGANETRA', subtitle: 'GIS Traffic Map' };
+      case '/incidents': return { title: 'MARGANETRA', subtitle: 'Incident Investigation' };
+      case '/vehicles': return { title: 'MARGANETRA', subtitle: 'Vehicle Intelligence' };
+      case '/analytics': return { title: 'MARGANETRA', subtitle: 'Analytics' };
+      case '/reports': return { title: 'MARGANETRA', subtitle: 'Reports' };
+      default: return { title: 'MARGANETRA', subtitle: 'मार्गनेत्र' };
     }
   };
 
@@ -66,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle = 'Urban Intelli
           <button
             onClick={handleLogout}
             className="p-1.5 hover:bg-red-50 text-slate-500 hover:text-red-700 rounded-md transition-colors"
-            title="Logout of UrbanSense"
+            title="Logout of MARGANETRA"
           >
             <LogOut className="w-4 h-4" />
           </button>

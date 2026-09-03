@@ -1,0 +1,178 @@
+[
+  {
+    "incident_id": "INC-011",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Road Damage & Potholes (High)",
+    "description": "nncncfn",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T10:24:31",
+    "location": {
+      "latitude": 28.6183,
+      "longitude": 77.1828,
+      "address": "Location (28.6183, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-010",
+    "category": "traffic_congestion",
+    "type": "Traffic & Congestion",
+    "title": "Traffic & Congestion (High)",
+    "description": "Hmm",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:45:03",
+    "location": {
+      "latitude": 23.6183,
+      "longitude": 77.1828,
+      "address": "Location (23.6183, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-009",
+    "category": "traffic_congestion",
+    "type": "Traffic & Congestion",
+    "title": "Traffic & Congestion (Low)",
+    "description": "Traffic is very high in evening in shivpuri",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:44:23",
+    "location": {
+      "latitude": 28.6183,
+      "longitude": 77.1828,
+      "address": "Location (28.6183, 77.1828)"
+    },
+    "severity": "low",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-008",
+    "category": "waterlogging",
+    "type": "Waterlogging",
+    "title": "Waterlogging (High)",
+    "description": "Much water seen at gwalior",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:42:38",
+    "location": {
+      "latitude": 25.6183,
+      "longitude": 77.1828,
+      "address": "Location (25.6183, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-007",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Road Damage & Potholes (High)",
+    "description": "Major asphalt crack near Connaught Ring Road",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:41:16",
+    "location": {
+      "latitude": 28.6183,
+      "longitude": 77.1828,
+      "address": "Location (28.6183, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-006",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Road Damage & Potholes (High)",
+    "description": "Large pothole near Janpath Intersection",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:40:20",
+    "location": {
+      "latitude": 28.6145,
+      "longitude": 77.2098,
+      "address": "Location (28.6145, 77.2098)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-005",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Road Damage & Potholes (High)",
+    "description": "Test pothole report near Central Junction",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:37:23",
+    "location": {
+      "latitude": 28.6183,
+      "longitude": 77.1828,
+      "address": "Central Junction, Delhi"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "INC-004",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Road Damage & Potholes (High)",
+    "description": "Test pothole report near Central Junction",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:22:11",
+    "location": {
+      "latitude": 28.6183,
+      "longitude": 77.1828,
+      "address": "Central Junction, Delhi"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "POT-001",
+    "category": "road_damage",
+    "type": "Road Damage & Potholes",
+    "title": "Severe Pothole Cluster",
+    "description": "Detected potholes and road-surface damage on main carriageway.",
+    "confidence": 0.93,
+    "timestamp": "2026-09-03T09:31:04",
+    "location": {
+      "latitude": 28.6145,
+      "longitude": 77.2098,
+      "address": "Janpath Crossing, Lane 2"
+    },
+    "severity": "high",
+    "status": "Open"
+  },
+  {
+    "incident_id": "TRF-001",
+    "category": "traffic_congestion",
+    "type": "Traffic & Congestion",
+    "title": "Gridlock Congestion Alert",
+    "description": "Vehicle activity, traffic density, and congestion detection.",
+    "confidence": 0.96,
+    "timestamp": "2026-09-03T09:30:15",
+    "location": {
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "address": "Connaught Place Outer Ring"
+    },
+    "severity": "high",
+    "status": "Open"
+  },
+  {
+    "incident_id": "WAT-001",
+    "category": "waterlogging",
+    "type": "Waterlogging",
+    "title": "Underpass Surface Waterlogging",
+    "description": "Detected waterlogged road areas causing vehicle deceleration.",
+    "confidence": 0.89,
+    "timestamp": "2026-09-03T09:32:10",
+    "location": {
+      "latitude": 28.618,
+      "longitude": 77.2065,
+      "address": "Minto Bridge Underpass"
+    },
+    "severity": "high",
+    "status": "Open"
+  }
+]

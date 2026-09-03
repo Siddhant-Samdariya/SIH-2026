@@ -1,0 +1,50 @@
+[
+  {
+    "incident_id": "INC-008",
+    "category": "waterlogging",
+    "type": "Waterlogging",
+    "title": "Waterlogging (High)",
+    "description": "Much water seen at gwalior",
+    "confidence": 0.95,
+    "timestamp": "2026-09-03T00:42:38",
+    "location": {
+      "latitude": 25.6183,
+      "longitude": 77.1828,
+      "address": "Location (25.6183, 77.1828)"
+    },
+    "severity": "high",
+    "status": "Reported"
+  },
+  {
+    "incident_id": "WAT-001",
+    "type": "waterlogging",
+    "category": "waterlogging",
+    "title": "Underpass Surface Waterlogging",
+    "description": "Detected waterlogged road areas causing vehicle deceleration.",
+    "confidence": 0.89,
+    "timestamp": "2026-09-03T09:32:10",
+    "location": {
+      "latitude": 28.618,
+      "longitude": 77.2065,
+      "address": "Minto Bridge Underpass"
+    },
+    "severity": "high",
+    "status": "Open"
+  },
+  {
+    "incident_id": "WAT-002",
+    "type": "waterlogging",
+    "category": "waterlogging",
+    "title": "Subway Drainage Accumulation",
+    "description": "Standing water accumulation along curb lane.",
+    "confidence": 0.82,
+    "timestamp": "2026-09-03T07:15:30",
+    "location": {
+      "latitude": 28.621,
+      "longitude": 77.214,
+      "address": "ITO Flyover Slip Road"
+    },
+    "severity": "medium",
+    "status": "Resolved"
+  }
+]
